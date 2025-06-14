@@ -1,0 +1,5 @@
+@EndUserText.label: 'Service definition for ZDM_C_INVHDRTP'
+define service ZDM_UI_INVHDR {
+  expose ZDM_C_INVHDRTP as Invoice;
+  expose ZDM_C_INVITMTP as InvoiceItem;
+}

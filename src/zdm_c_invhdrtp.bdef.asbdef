@@ -1,0 +1,32 @@
+projection;
+strict ( 2 );
+use draft;
+
+define behavior for ZDM_C_INVHDRTP alias Invoice
+use etag
+
+{
+  use create;
+  use update;
+  use delete;
+
+  use action Edit;
+  use action Activate;
+  use action Discard;
+  use action Resume;
+  use action Prepare;
+
+  use action approveInvoice;
+  use action rejectInvoice;
+  use association _InvoiceItems { create; with draft; }
+}
+
+define behavior for ZDM_C_INVITMTP alias InvoiceItems
+use etag
+
+{
+  use update;
+  use delete;
+
+  use association _Invoice { with draft; }
+}

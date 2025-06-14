@@ -1,0 +1,115 @@
+managed implementation in class ZDM_BP_INVHDRTP unique;
+strict ( 2 );
+with draft;
+
+define behavior for ZDM_R_INVHDRTP alias Invoice
+persistent table zdm_ainvhdr
+draft table ZDM_DINVHDR
+etag master LocalLastChangedAt
+lock master total etag LastChangedAt
+late numbering
+authorization master( global )
+
+{
+
+  field ( readonly )
+   InvoiceID,
+   LocalCreatedAt,
+   LocalCreatedBy,
+   LastChangedAt,
+   LocalLastChangedAt,
+   LocalLastChangedBy;
+
+  field ( mandatory )
+   VendorName,
+   VendorTaxNumber,
+   InvoiceReceiptDate,
+   AmountDue,
+   DueDate,
+   PoNum,
+   ExtInvoiceID;
+
+  determination setStatusOnDraftCreate on save { create; }
+
+  action ( features : instance ) approveInvoice result [1] $self;
+  action ( features : instance ) rejectInvoice result [1] $self;
+
+  create;
+  update( features : instance );
+  delete( features : instance );
+
+  draft action ( features : instance ) Edit;
+  draft action Activate optimized;
+  draft action Discard;
+  draft action Resume;
+  draft determine action Prepare;
+
+  mapping for ZDM_AINVHDR
+  {
+    InvoiceID = invoice_id;
+    ExtInvoiceID = ext_invoice_id;
+    Status = status;
+    PoNum = po_num;
+    InvoiceReceiptDate = invoice_receipt_date;
+    DueDate = due_date;
+    Subtotal = subtotal;
+    Currency = currency;
+    Total = total;
+    AmountDue = amount_due;
+    Tax = tax;
+    VendorAddress = vendor_address;
+    VendorTaxNumber = vendor_tax_number;
+    VendorName = vendor_name;
+    Mimetype = mimetype;
+    Filename = filename;
+    TmpMimetype = tmp_mimetype;
+    TmpFilename = tmp_filename;
+    TmpAttachment = tmp_attachment;
+    LocalCreatedBy = local_created_by;
+    LocalCreatedAt = local_created_at;
+    LocalLastChangedBy = local_last_changed_by;
+    LocalLastChangedAt = local_last_changed_at;
+    LastChangedAt = last_changed_at;
+  }
+
+  association _InvoiceItems { create ( features : instance ); with draft; }
+}
+
+define behavior for ZDM_R_INVITMTP alias InvoiceItem
+implementation in class ZDM_BP_INVITMTP unique
+persistent table zdm_ainvitm
+draft table zdm_dinvitm
+etag master LocalLastChangedAt
+lock dependent by _Invoice
+authorization dependent by _Invoice
+late numbering
+{
+  field ( readonly )
+  InvoiceID,
+  ItemNum,
+  LocalLastChangedAt;
+
+  update;
+  delete;
+
+  //validation(s)
+    field ( mandatory )
+    LinePrice,
+    Quantity,
+    Description,
+    UnitPrice;
+
+  mapping for zdm_ainvitm
+    {
+      InvoiceID          = invoice_id;
+      ItemNum            = item_num;
+      Quantity           = quantity;
+      Description        = description;
+      UnitPrice          = unit_price;
+      LinePrice          = line_price;
+      Currency           = currency;
+      LocalLastChangedAt = LOCAL_LAST_CHANGED_AT;
+    }
+
+  association _Invoice { with draft; }
+}

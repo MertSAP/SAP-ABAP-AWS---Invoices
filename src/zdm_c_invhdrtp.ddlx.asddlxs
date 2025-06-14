@@ -1,0 +1,196 @@
+@Metadata.layer: #CORE
+@UI: {
+  headerInfo: {
+    typeName: 'Invoice',
+    typeNamePlural: 'Invoices',
+    title: { type: #STANDARD, value: 'InvoiceID' },
+    description: { type: #STANDARD, value: 'StatusText'}
+  }
+}
+annotate view ZDM_C_INVHDRTP with
+{
+  @UI.facet: [
+  {
+   id: 'idCollection',
+   type: #COLLECTION,
+   label: 'Invoice',
+   position: 10
+  },
+  {
+   id: 'idCollectionCosts',
+   type: #COLLECTION,
+   label: 'Costs',
+   position: 30
+  },
+  {
+   id: 'idIdentification',
+   parentId: 'idCollection',
+   type: #FIELDGROUP_REFERENCE,
+   label: 'General Information',
+   targetQualifier: 'keyInfo',
+   position: 10
+  },
+   {
+   id: 'idDates',
+   parentId: 'idCollection',
+   type: #FIELDGROUP_REFERENCE,
+   targetQualifier: 'Dates',
+   label: 'Dates',
+   position: 20
+  },
+  {
+   id: 'idVendorInfo',
+   parentId: 'idCollection',
+   type: #FIELDGROUP_REFERENCE,
+   targetQualifier: 'VendorInfo',
+   label: 'Vendor Info',
+   position: 30
+  },
+  {
+   id: 'idAttachments',
+   parentId: 'idCollection',
+   type: #FIELDGROUP_REFERENCE,
+   targetQualifier: 'Attachments',
+   label: 'Attachments',
+   position: 40
+  },
+
+  {
+   id: 'idLineitem',
+   type: #LINEITEM_REFERENCE,
+   position: 20 ,
+   targetElement: '_InvoiceItems'
+  },
+  {
+   id: 'idCosts',
+   parentId: 'idCollectionCosts',
+   type: #FIELDGROUP_REFERENCE,
+   label: 'Cost',
+   targetQualifier: 'Costs',
+   position: 60
+  } ]
+
+
+@UI.identification: [
+    { position: 10 , importance: #HIGH }
+   ,{ type: #FOR_ACTION, dataAction: 'approveInvoice', label: 'Approve Invoice' }  //added line
+   ,{ type: #FOR_ACTION, dataAction: 'rejectInvoice', label: 'Reject Invoice' }  //added line
+  ]
+  
+  @UI.lineItem: [ {
+   position: 10 ,
+   importance: #MEDIUM,
+   label: 'Invoice #'
+  }]
+
+  @UI.selectionField: [{
+   position: 10
+    }]
+  InvoiceID;
+
+
+  @UI.lineItem: [ {
+  position: 20 ,
+  importance: #MEDIUM,
+  label: 'Vendor Invoice #'
+  }]
+  @UI.fieldGroup: [ {
+  position: 20,
+  label: 'Vendor Invoice #',
+  qualifier: 'keyInfo'
+  } ]
+  @UI.selectionField: [{
+  position: 20
+   }]
+  ExtInvoiceID;
+
+
+  @UI.fieldGroup: [ {
+   position: 30,
+   label: 'PO #',
+  qualifier: 'keyInfo'
+  } ]
+  PoNum;
+  
+  @UI.lineItem: [ {
+  position: 30 ,
+  importance: #MEDIUM,
+  label: 'Invoice Receipt Date'
+  } ]
+  @UI.fieldGroup: [ {
+   position: 10 ,
+   label: 'Invoice Receipt Date',
+     qualifier: 'Dates'
+  } ]
+  InvoiceReceiptDate;
+
+  @UI.lineItem: [ {
+   position: 40 ,
+   importance: #MEDIUM,
+   label: 'Due Date'
+  } ]
+  @UI.fieldGroup: [ {
+   position: 20 ,
+   label: 'Due Date',
+     qualifier: 'Dates'
+  } ]
+  DueDate;
+
+ @UI.fieldGroup: [ {
+   position: 100 ,
+   label: 'Vendor Address',
+   qualifier: 'VendorInfo'
+  } ]
+  VendorAddress;
+
+  @UI.lineItem: [ {
+   position: 10 ,
+   importance: #MEDIUM,
+   label: 'Vendor Name'
+  } ]
+  @UI.fieldGroup: [ {
+   position: 20 ,
+   label: 'Vendor Name',
+      qualifier: 'VendorInfo'
+  } ]
+  VendorName;
+
+
+  @UI.fieldGroup: [ {
+  position: 30 ,
+  label: 'Tax Number',
+  qualifier: 'VendorInfo'
+  } ]
+  VendorTaxNumber;
+  
+   @UI.fieldGroup: [ {
+   position: 120 ,
+   label: 'Attachment',
+    qualifier: 'Attachments'
+  } ]
+  TmpAttachment;
+
+  
+ @UI.fieldGroup: [{ qualifier: 'Costs', position: 30, label: 'Sub Total'}]
+  Subtotal;
+
+  @UI.lineItem: [ {
+   position: 40 ,
+   importance: #MEDIUM,
+   label: 'Total'
+  } ]
+
+
+  @UI.fieldGroup: [{ qualifier: 'Costs', position: 40, label: 'Total'}]
+  Total;
+
+
+
+  @UI.fieldGroup: [{ qualifier: 'Costs', position: 10, label: 'Amount Due'}]
+
+  AmountDue;
+
+
+  @UI.fieldGroup: [{ qualifier: 'Costs', position: 20, label: 'Tax'}]
+  Tax;
+}
