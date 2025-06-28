@@ -4,6 +4,7 @@
   <asx:values>
    <DEVC>
     <CTEXT>Invoice Package</CTEXT>
+    <PACKKIND>5</PACKKIND>
    </DEVC>
   </asx:values>
  </asx:abap>
