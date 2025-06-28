@@ -13,19 +13,19 @@ CLASS lsc_zdm_r_invhdrtp IMPLEMENTATION.
   METHOD adjust_numbers.
     IF mapped-invoiceitem IS NOT INITIAL.
 
-          DATA: max_item_id TYPE i VALUE 0.
+      DATA: max_item_id TYPE i VALUE 0.
 
-          LOOP AT mapped-invoiceitem  ASSIGNING FIELD-SYMBOL(<item>).
-            <item>-InvoiceID = <item>-%tmp-InvoiceID.
-            IF max_item_id EQ 0.
-              SELECT MAX( item_num ) FROM zdm_ainvitm WHERE invoice_id = @<item>-InvoiceID INTO @max_item_id .
-            ENDIF.
+      LOOP AT mapped-invoiceitem  ASSIGNING FIELD-SYMBOL(<item>).
+        <item>-InvoiceID = <item>-%tmp-InvoiceID.
+        IF max_item_id EQ 0.
+          SELECT MAX( item_num ) FROM zdm_ainvitm WHERE invoice_id = @<item>-InvoiceID INTO @max_item_id .
+        ENDIF.
 
-            max_item_id += 1.
-            <item>-ItemNum = max_item_id.
+        max_item_id += 1.
+        <item>-ItemNum = max_item_id.
 
-          ENDLOOP.
-    endif.
+      ENDLOOP.
+    ENDIF.
   ENDMETHOD.
 
 ENDCLASS.
@@ -71,24 +71,24 @@ CLASS lhc_Invoice IMPLEMENTATION.
 
     " evaluate the conditions, set the operation state, and set result parameter
     result = VALUE #( FOR invoice IN invoices
-                       ( %tky                   = invoice-%tky
+                      ( %tky                   = invoice-%tky
 
                    "     %features-%update      = COND #( WHEN invoice-Status <> ''
                                                        "   THEN if_abap_behv=>fc-o-disabled ELSE if_abap_behv=>fc-o-enabled   )
 
                         %features-%delete      = COND #( WHEN invoice-Status = invoice_status-open
-                                                          THEN if_abap_behv=>fc-o-enabled ELSE if_abap_behv=>fc-o-disabled   )
+                                                         THEN if_abap_behv=>fc-o-enabled ELSE if_abap_behv=>fc-o-disabled )
 
-                         %action-Edit           =  COND #( WHEN invoice-Status <> invoice_status-notsubmitted
-                                                          THEN if_abap_behv=>fc-o-disabled ELSE if_abap_behv=>fc-o-enabled   )
+                        %action-Edit           = COND #( WHEN invoice-Status <> invoice_status-notsubmitted
+                                                         THEN if_abap_behv=>fc-o-disabled ELSE if_abap_behv=>fc-o-enabled )
 
 
-                         %action-approveInvoice   = COND #( WHEN invoice-Status EQ 'O'
-                                                              THEN if_abap_behv=>fc-o-enabled ELSE if_abap_behv=>fc-o-disabled   )
+                        %action-approveInvoice = COND #( WHEN invoice-Status EQ 'O'
+                                                         THEN if_abap_behv=>fc-o-enabled ELSE if_abap_behv=>fc-o-disabled )
 
-                         %action-rejectInvoice   = COND #( WHEN invoice-Status EQ 'O'
-                                                              THEN if_abap_behv=>fc-o-enabled ELSE if_abap_behv=>fc-o-disabled   )
-                      ) ).
+                        %action-rejectInvoice  = COND #( WHEN invoice-Status EQ 'O'
+                                                         THEN if_abap_behv=>fc-o-enabled ELSE if_abap_behv=>fc-o-disabled )
+                    ) ).
 
 
   ENDMETHOD.
@@ -101,16 +101,16 @@ CLASS lhc_Invoice IMPLEMENTATION.
          RESULT DATA(invoices).
 
     DELETE invoices WHERE Status IS NOT INITIAL.
-    CHECK invoices IS NOT INITIAL.
-
-
+    IF invoices IS INITIAL.
+      RETURN.
+    ENDIF.
     "update involved instances
     MODIFY ENTITIES OF zdm_r_invhdrtp IN LOCAL MODE
       ENTITY Invoice
         UPDATE FIELDS ( Status )
         WITH VALUE #( FOR invoice IN invoices INDEX INTO i (
-                           %tky      = invoice-%tky
-                           Status  =  invoice_status-open ) ).
+                      %tky   = invoice-%tky
+                      Status = invoice_status-open ) ).
 
   ENDMETHOD.
 
@@ -118,7 +118,7 @@ CLASS lhc_Invoice IMPLEMENTATION.
     MODIFY ENTITIES OF zdm_r_invhdrtp IN LOCAL MODE
           ENTITY Invoice
              UPDATE FIELDS ( Status )
-                WITH VALUE #( FOR key IN keys ( %tky         = key-%tky
+                WITH VALUE #( FOR key IN keys ( %tky   = key-%tky
                                                 Status = invoice_status-approved ) ). " 'A' Approved
 
     " read changed data for result
@@ -135,7 +135,7 @@ CLASS lhc_Invoice IMPLEMENTATION.
     MODIFY ENTITIES OF zdm_r_invhdrtp IN LOCAL MODE
           ENTITY Invoice
              UPDATE FIELDS ( Status )
-                WITH VALUE #( FOR key IN keys ( %tky         = key-%tky
+                WITH VALUE #( FOR key IN keys ( %tky   = key-%tky
                                                 Status = invoice_status-rejected ) ). " 'A' Approved
 
     " read changed data for result
@@ -173,12 +173,12 @@ CLASS lhc_Invoice IMPLEMENTATION.
         ).
       CATCH cx_number_ranges INTO DATA(lx_number_ranges).
         LOOP AT entities_wo_InvoiceID INTO invoice.
-          APPEND VALUE #(  %cid = invoice-%cid
-                           %key = invoice-%key
-                           %msg = lx_number_ranges
+          APPEND VALUE #( %cid = invoice-%cid
+                          %key = invoice-%key
+                          %msg = lx_number_ranges
                         ) TO reported-invoice.
-          APPEND VALUE #(  %cid = invoice-%cid
-                           %key = invoice-%key
+          APPEND VALUE #( %cid = invoice-%cid
+                          %key = invoice-%key
                         ) TO failed-invoice.
         ENDLOOP.
         EXIT.
@@ -194,9 +194,9 @@ CLASS lhc_Invoice IMPLEMENTATION.
     LOOP AT entities ASSIGNING FIELD-SYMBOL(<ls_entity>).
       invoice_id_max += 1.
 
-      APPEND VALUE #( %cid  = <ls_entity>-%cid
+      APPEND VALUE #( %cid      = <ls_entity>-%cid
                       %is_draft = <ls_entity>-%is_draft
-                     InvoiceID = invoice_id_max
+                      InvoiceID = invoice_id_max
                     ) TO mapped-invoice.
     ENDLOOP.
 
