@@ -2,7 +2,7 @@ CLASS lsc_zdm_r_invhdrtp DEFINITION INHERITING FROM cl_abap_behavior_saver.
 
   PROTECTED SECTION.
     METHODS adjust_numbers REDEFINITION.
-
+    METHODS save_modified REDEFINITION.
 
 ENDCLASS.
 
@@ -28,6 +28,26 @@ CLASS lsc_zdm_r_invhdrtp IMPLEMENTATION.
     ENDIF.
   ENDMETHOD.
 
+  METHOD save_modified.
+    IF delete-invoice IS NOT INITIAL.
+      SELECT InvoiceID, Filename FROM zdm_r_invhdrtp
+      FOR ALL ENTRIES IN @delete-invoice
+      WHERE InvoiceID = @delete-invoice-InvoiceID
+      INTO TABLE @DATA(lt_filenames).
+
+      LOOP AT lt_filenames INTO DATA(ls_filenames)
+       WHERE Filename IS NOT INITIAL.
+        TRY.
+            DATA(storage_helper) = NEW zdm_cl_aws_invoice_storage( ls_filenames-InvoiceID ).
+            storage_helper->delete_object( iv_filename = ls_filenames-filename ).
+          CATCH /aws1/cx_rt_technical_generic /aws1/cx_rt_service_generic /aws1/cx_rt_no_auth_generic.
+            "handle exception
+        ENDTRY.
+      ENDLOOP.
+    ENDIF.
+
+  ENDMETHOD.
+
 ENDCLASS.
 
 CLASS lhc_Invoice DEFINITION INHERITING FROM cl_abap_behavior_handler.
@@ -44,6 +64,8 @@ CLASS lhc_Invoice DEFINITION INHERITING FROM cl_abap_behavior_handler.
 
     METHODS rejectinvoice FOR MODIFY
       IMPORTING keys FOR ACTION invoice~rejectinvoice RESULT result.
+    METHODS uploadtos3 FOR DETERMINE ON SAVE
+      IMPORTING keys FOR invoice~uploadtos3.
     METHODS earlynumbering_create FOR NUMBERING
       IMPORTING entities FOR CREATE invoice.
     CONSTANTS:
@@ -201,6 +223,56 @@ CLASS lhc_Invoice IMPLEMENTATION.
     ENDLOOP.
 
 
+  ENDMETHOD.
+
+  METHOD uploadToS3.
+    READ ENTITIES OF zdm_r_invhdrtp IN LOCAL MODE
+        ENTITY Invoice ALL FIELDS WITH CORRESPONDING #( keys )
+        RESULT FINAL(lt_invoices_entity).
+
+    LOOP AT lt_invoices_entity INTO DATA(invoice_entity)
+        WHERE TmpAttachment IS NOT INITIAL.
+
+      DATA(lv_success) = abap_true.
+
+
+      TRY.
+          DATA(storage_helper) = NEW zdm_cl_aws_invoice_storage( invoice_entity-InvoiceID ).
+          storage_helper->put_object( iv_filename = invoice_entity-tmpfilename
+                                      iv_old_filename = invoice_entity-filename
+                                      iv_body = invoice_entity-tmpattachment ).
+
+        CATCH /aws1/cx_rt_technical_generic /aws1/cx_rt_service_generic  /aws1/cx_rt_no_auth_generic.
+          "handle exception
+          lv_success = abap_false.
+      ENDTRY.
+
+      IF lv_success EQ abap_true.
+        invoice_entity-Filename = storage_helper->get_filename( invoice_entity-TmpFilename ).
+        invoice_entity-Mimetype = invoice_entity-TmpMimetype.
+        CLEAR invoice_entity-TmpAttachment.
+        CLEAR invoice_entity-TmpMimetype.
+        CLEAR invoice_entity-TmpFilename.
+
+        MODIFY ENTITIES OF zdm_r_invhdrtp IN LOCAL MODE
+         ENTITY Invoice
+         UPDATE FIELDS ( TmpAttachment TmpFilename TmpMimetype Filename Mimetype )
+         WITH VALUE #( ( %key = invoice_entity-%key
+                         %is_draft = invoice_entity-%is_draft
+                         TmpAttachment = invoice_entity-TmpAttachment
+                         TmpFilename = invoice_entity-TmpFilename
+                         TmpMimetype = invoice_entity-TmpMimetype
+                         Filename = invoice_entity-Filename
+                         Mimetype = invoice_entity-Mimetype
+                         ) ) FAILED DATA(failed_update)
+                         REPORTED DATA(reported_update).
+      ELSE.
+        INSERT VALUE #( %tky                   = invoice_entity-%tky
+                         %element-TmpAttachment = if_abap_behv=>mk-on
+                         %msg                   = me->new_message_with_text( severity = if_abap_behv_message=>severity-error
+                                                                             text     = 'Unable to Store Invoice' ) ) INTO TABLE reported-invoice.
+      ENDIF.
+    ENDLOOP.
   ENDMETHOD.
 
 ENDCLASS.

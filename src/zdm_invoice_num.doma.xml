@@ -10,6 +10,7 @@
     <OUTPUTLEN>000010</OUTPUTLEN>
     <DDTEXT>Invoice Number Internal Domain</DDTEXT>
     <DOMMASTER>E</DOMMASTER>
+    <ABAP_LANGUAGE_VERSION>5</ABAP_LANGUAGE_VERSION>
    </DD01V>
   </asx:values>
  </asx:abap>
