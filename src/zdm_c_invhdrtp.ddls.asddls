@@ -23,6 +23,12 @@ define root view entity ZDM_C_INVHDRTP
   VendorName,
   Mimetype,
   Filename,
+  @Semantics.largeObject:
+                      { mimeType: 'Mimetype',
+                      fileName: 'Filename',
+                      contentDispositionPreference: #INLINE }
+  @ObjectModel.virtualElementCalculatedBy: 'ABAP:ZDM_CL_AWS_INVOICE_RETRIEVE'
+  virtual Attachment: zdm_file_attachment,
   TmpMimetype,
   TmpFilename,
     @Semantics.largeObject:
